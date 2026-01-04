@@ -1,1 +1,1 @@
-All code that is EXCLUSIVE to v1 (so not things like autonomous)
+All code that is EXCLUSIVE to v1 (so not things like autonomous, or drivetrain which can be used in v2)
