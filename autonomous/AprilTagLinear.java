@@ -24,6 +24,20 @@ public class AprilTagLinear extends LinearOpMode {
     private VisionPortal visionPortal;
     private List<AprilTagDetection> detectedTags = new ArrayList<>();
 
+    // getting field position using coords from april tag
+    public static class FieldPose {
+        public double x;
+        public double y;
+        public double heading;
+
+        public FieldPose(double x, double y, double heading) {
+            this.x = x;
+            this.y = y;
+            this.heading = heading;
+        }
+    }
+
+
     @Override
     public void runOpMode() throws InterruptedException {
 
@@ -93,11 +107,61 @@ public class AprilTagLinear extends LinearOpMode {
                     tag.ftcPose.pitch, tag.ftcPose.roll, tag.ftcPose.yaw));
             telemetry.addLine(String.format("RBE: %.1f (cm), %.1f (deg), %.1f (deg)",
                     tag.ftcPose.range, tag.ftcPose.bearing, tag.ftcPose.elevation));
+
+            // ================== ADDITION ==================
+            FieldPose robotPose = getRobotFieldPose(tag);
+            if (robotPose != null) {
+                telemetry.addLine("---- ROBOT FIELD POSE ----");
+                telemetry.addLine(String.format("Field X: %.1f cm", robotPose.x));
+                telemetry.addLine(String.format("Field Y: %.1f cm", robotPose.y));
+                telemetry.addLine(String.format("Heading: %.1f deg", robotPose.heading));
+            }
+            //
+
         } else {
             telemetry.addLine(String.format("\n==== (ID %d) Unknown", tag.id));
             telemetry.addLine(String.format("Center: %.0f, %.0f (px)", tag.center.x, tag.center.y));
         }
     }
+
+    // method to find position
+    private FieldPose getAprilTagFieldPose(int tagId) {
+        // REPLACE with official FTC Decode field coordinates
+        switch (tagId) {
+            case 20:
+                return new FieldPose(0, 144, 180);
+            case 21:
+                return new FieldPose(-72, 144, 180);
+            case 22:
+                return new FieldPose(72, 144, 180);
+            default:
+                return null;
+        }
+    }
+
+    private FieldPose getRobotFieldPose(AprilTagDetection tag) {
+
+        FieldPose tagPose = getAprilTagFieldPose(tag.id);
+        if (tagPose == null || tag.ftcPose == null) return null;
+
+        double robotXRel = tag.ftcPose.x;
+        double robotYRel = tag.ftcPose.y;
+
+        double headingRad = Math.toRadians(tagPose.heading);
+
+        double fieldX = tagPose.x
+                - (robotXRel * Math.cos(headingRad)
+                - robotYRel * Math.sin(headingRad));
+
+        double fieldY = tagPose.y
+                - (robotXRel * Math.sin(headingRad)
+                + robotYRel * Math.cos(headingRad));
+
+        double fieldHeading = tagPose.heading - tag.ftcPose.yaw;
+
+        return new FieldPose(fieldX, fieldY, fieldHeading);
+    }
+
 
     private void stopAprilTag() {
         if (visionPortal != null) {
