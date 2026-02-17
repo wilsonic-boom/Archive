@@ -1,0 +1,19 @@
+    public void setStartPose() {
+        if (alliance == Alliance.BLUE_BOTTOM) {
+            FieldX = -24.0;
+            FieldY = -60.0;
+            FieldRotation = 45.0;
+        } else if (alliance == Alliance.BLUE_TOP){
+            FieldX = -60.0;
+            FieldY = 60.0;
+            FieldRotation = 135.0;
+        } else if (alliance == Alliance.RED_BOTTOM){
+            FieldX = 60;
+            FieldY = -60.0;
+            FieldRotation = 315;
+        } else if (alliance == Alliance.RED_TOP){
+            FieldX = 60.0;
+            FieldY = 60.0;
+            FieldRotation = 225.0;
+        }
+    }
