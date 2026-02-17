@@ -1,0 +1,23 @@
+    public double[] FindCR() {
+
+        int colour;
+        if (alliance == Alliance.BLUE_BOTTOM || alliance == Alliance.BLUE_TOP) {
+            colour = 0;
+        } else {
+            colour = 1;
+        }
+        double ROWS[][][] = {{{-48,-36,270},{-48,-12,270},{-48,12,270}},{{48,-36,270},{48,-12,270},{48,12,270}}};
+        double cords[] = FindPos();
+        double distance = 10000.0;
+        int row = 0;
+        for (int i = 0; i < 3; i++) {
+            double x_distance = cords[0] - ROWS[colour][i][0];
+            double y_distance = cords[1] - ROWS[colour][i][1];
+            double distancetemp = Math.sqrt(x_distance*x_distance + y_distance*y_distance);
+            if (distancetemp < distance) {
+                distance = distancetemp;
+                row = i;
+            }
+        }
+        return ROWS[colour][row];
+    }
