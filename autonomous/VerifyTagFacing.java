@@ -20,8 +20,8 @@ public class VerifyTagFacing extends LinearOpMode {
     AprilTagProcessor aprilTag;
 
     // Alignment parameters
-    double YAW_TOLERANCE = 2.0;   // This is essentially the margin of error!
-    double TURN_POWER = 0.2;      // fixed turn speed
+    double YAW_TOLERANCE = 2.0;
+    double TURN_POWER = 0.2;
 
     @Override
     public void runOpMode() {
@@ -50,54 +50,48 @@ public class VerifyTagFacing extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-
-            // Get detected tags
-            List<AprilTagDetection> detections = aprilTag.getDetections();
-
-            double turnPowerLeft = 0;
-            double turnPowerRight = 0;
-
-            if (!detections.isEmpty()) {
-                AprilTagDetection tag = detections.get(0);
-                double yawError = tag.ftcPose.yaw;
-
-                telemetry.addData("Tag ID", tag.id);
-                telemetry.addData("Yaw Error", yawError);
-
-                // Turn left or right at fixed speed until aligned
-                if (yawError > YAW_TOLERANCE) {
-                    turnPowerLeft = TURN_POWER;
-                    turnPowerRight = -TURN_POWER;
-                } else if (yawError < -YAW_TOLERANCE) {
-                    turnPowerLeft = -TURN_POWER;
-                    turnPowerRight = TURN_POWER;
-                } else {
-                    // Aligned so stop turning
-                    turnPowerLeft = 0;
-                    turnPowerRight = 0;
-                }
-
-            } else {
-                telemetry.addLine("No Tag Detected – idle");
-                turnPowerLeft = 0;
-                turnPowerRight = 0;
-            }
-
-            // Apply motor powers for turning
-            lf.setPower(turnPowerLeft);
-            lb.setPower(turnPowerLeft);
-            rf.setPower(turnPowerRight);
-            rb.setPower(turnPowerRight);
-
+            alignToTag();
             telemetry.update();
         }
     }
-}
 
-/* What this code does:
-    Gets list of detected tags in the list if length of list > 1
-    Retrieves the first element
-    Obtains metrics from the april tag and turns in the right direction until facing it
-    If it is aligned make the robot still
-    Set power to all the motors for alignment to happen
- */
+    /**
+     * Detects the first visible AprilTag and turns the robot
+     * until the yaw error is within YAW_TOLERANCE degrees.
+     * Stops motors if no tag is detected or already aligned.
+     */
+    private void alignToTag() {
+        List<AprilTagDetection> detections = aprilTag.getDetections();
+
+        double turnPowerLeft = 0;
+        double turnPowerRight = 0;
+
+        if (!detections.isEmpty()) {
+            AprilTagDetection tag = detections.get(0);
+            double yawError = tag.ftcPose.yaw;
+
+            telemetry.addData("Tag ID", tag.id);
+            telemetry.addData("Yaw Error", yawError);
+
+            if (yawError > YAW_TOLERANCE) {
+                // Tag is to the right — turn left
+                turnPowerLeft = TURN_POWER;
+                turnPowerRight = -TURN_POWER;
+            } else if (yawError < -YAW_TOLERANCE) {
+                // Tag is to the left — turn right
+                turnPowerLeft = -TURN_POWER;
+                turnPowerRight = TURN_POWER;
+            }
+            // else: within tolerance, powers stay 0 (aligned)
+
+        } else {
+            telemetry.addLine("No Tag Detected – idle");
+        }
+
+        // Apply motor powers
+        lf.setPower(turnPowerLeft);
+        lb.setPower(turnPowerLeft);
+        rf.setPower(turnPowerRight);
+        rb.setPower(turnPowerRight);
+    }
+}
