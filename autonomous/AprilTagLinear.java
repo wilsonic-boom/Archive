@@ -1,187 +1,130 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.util.Size;
-
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-
-import org.firstinspires.ftc.robotcore.external.Telemetry;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.vision.VisionPortal;
-import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
-
-import java.util.ArrayList;
+import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import java.util.List;
 
-@Autonomous(name="AprilTag Linear Test")
+@TeleOp(name = "AprilTag Linear Localization")
 public class AprilTagLinear extends LinearOpMode {
 
-    // Tag IDs for each alliance goal
-    private static final int TAG_BLUE_GOAL = 21;
-    private static final int TAG_RED_GOAL  = 22;
+    private static final String WEBCAM_NAME = "Webcam 1";
 
-    private AprilTagProcessor aprilTagProcessor;
+    // Physical calibration: distance from robot center to camera lens (inches)
+    private static final double CAMERA_FORWARD_OFFSET = 0.0;
+    private static final double CAMERA_LEFT_OFFSET = 0.0;
+
+    // objects for vision
+    private AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
-    private List<AprilTagDetection> detectedTags = new ArrayList<>();
-
-    // Stores the robot's position and heading on the field
-    public static class FieldPose {
-        public double x;
-        public double y;
-        public double heading;
-
-        public FieldPose(double x, double y, double heading) {
-            this.x       = x;
-            this.y       = y;
-            this.heading = heading;
-        }
-    }
 
     @Override
-    public void runOpMode() throws InterruptedException {
+    public void runOpMode() {
 
-        initAprilTagPipeline(hardwareMap, telemetry);
+        // 1. Initialize the AprilTag Processor
+        // Forces units to Inches/Degrees so the math equations work correctly
+        aprilTag = new AprilTagProcessor.Builder()
+                .setOutputUnits(DistanceUnit.INCH, AngleUnit.DEGREES)
+                .build();
 
-        telemetry.addLine("AprilTag pipeline initialized.");
-        telemetry.addLine("Waiting for start...");
+        // 2. Initialize the Vision Portal (Camera)
+        visionPortal = new VisionPortal.Builder()
+                .setCamera(hardwareMap.get(WebcamName.class, WEBCAM_NAME))
+                .addProcessor(aprilTag)
+                .build();
+
+        telemetry.addData("Status", "Initialized. Using Tags 20 (Blue) and 24 (Red).");
         telemetry.update();
 
         waitForStart();
 
-        // Main loop: detect tags and compute robot field pose each cycle
         while (opModeIsActive()) {
+            List<AprilTagDetection> currentDetections = aprilTag.getDetections();
 
-            updateDetections();
+            boolean targetFound = false;
 
-            FieldPose robotPose = null;
-            AprilTagDetection usedTag = null;
+            for (AprilTagDetection detection : currentDetections) {
+                // Focus strictly on the Goal tags as specified
+                if (detection.id == 20 || detection.id == 24) {
 
-            for (int id : new int[]{TAG_BLUE_GOAL, TAG_RED_GOAL}) {
-                AprilTagDetection tag = getTagById(id);
-                if (tag != null && tag.ftcPose != null) {
-                    robotPose = getRobotFieldPose(tag);
-                    if (robotPose != null) {
-                        usedTag = tag;
-                        break;
+                    RobotPose pose = calculateRobotPose(detection);
+
+                    if (pose != null) {
+                        targetFound = true;
+                        telemetry.addLine("\n--- Robot Field Position ---");
+                        telemetry.addData("Target Tag", "ID %d", detection.id);
+                        telemetry.addData("X (Inches)", "%.2f", pose.x);
+                        telemetry.addData("Y (Inches)", "%.2f", pose.y);
+                        telemetry.addData("Heading", "%.2f°", pose.heading);
                     }
                 }
             }
 
-            displayDetectionTelemetry(usedTag, robotPose);
+            if (!targetFound) {
+                telemetry.addLine("No Goal Tags in sight...");
+            }
+
             telemetry.update();
+            sleep(20);
         }
 
-        stopAprilTag();
+        visionPortal.close();
     }
 
-    // Initialises the AprilTag processor and vision portal
-    private void initAprilTagPipeline(HardwareMap hwmap, Telemetry telemetry) {
-
-        aprilTagProcessor = new AprilTagProcessor.Builder()
-                .setDrawTagID(true)
-                .setDrawTagOutline(true)
-                .setDrawAxes(true)
-                .setDrawCubeProjection(true)
-                .setOutputUnits(DistanceUnit.CM, AngleUnit.DEGREES)
-                .build();
-
-        VisionPortal.Builder builder = new VisionPortal.Builder();
-        builder.setCamera(hwmap.get(WebcamName.class, "Webcam 1"));
-        builder.setCameraResolution(new Size(640, 480));
-        builder.addProcessor(aprilTagProcessor);
-
-        visionPortal = builder.build();
-    }
-
-    // Pulls the latest detections from the processor
-    private void updateDetections() {
-        detectedTags = aprilTagProcessor.getDetections();
-    }
-
-    // Returns the detection matching the given tag ID, or null if not found
-    private AprilTagDetection getTagById(int id) {
-        for (AprilTagDetection tag : detectedTags) {
-            if (tag.id == id) return tag;
+    /**
+     * Inner class to hold the calculated robot location
+     */
+    public static class RobotPose {
+        public double x, y, heading;
+        public RobotPose(double x, double y, double heading) {
+            this.x = x;
+            this.y = y;
+            this.heading = heading;
         }
-        return null;
     }
 
-    // Outputs tag pose and computed robot field position to telemetry
-    private void displayDetectionTelemetry(AprilTagDetection tag, FieldPose robotPose) {
+    /**
+     * CORE CALCULATION: Transforms a slanted tag detection into global X, Y coordinates.
+     */
+    public RobotPose calculateRobotPose(AprilTagDetection detection) {
+        if (detection.ftcPose == null) return null;
 
-        if (tag == null) {
-            telemetry.addLine("No goal tag detected.");
-            return;
-        }
+        double tagX, tagY, tagAngle;
 
-        String goalName = (tag.id == TAG_BLUE_GOAL) ? "BLUE GOAL" : "RED GOAL";
-
-        if (tag.metadata != null) {
-            telemetry.addLine(String.format("\n==== (ID %d) %s  [%s]",
-                    tag.id, tag.metadata.name, goalName));
+        // Red Goal (24) is Top-Right facing South-West (225°).
+        // Blue Goal (20) is Top-Left facing South-East (315°).
+        if (detection.id == 24) {
+            tagX = 72.0; tagY = 72.0; tagAngle = 225.0;
+        } else if (detection.id == 20) {
+            tagX = -72.0; tagY = 72.0; tagAngle = 315.0;
         } else {
-            telemetry.addLine(String.format("\n==== (ID %d) Unknown  [%s]",
-                    tag.id, goalName));
+            return null;
         }
 
-        telemetry.addLine(String.format("XYZ: %.1f, %.1f, %.1f (cm)",
-                tag.ftcPose.x, tag.ftcPose.y, tag.ftcPose.z));
-        telemetry.addLine(String.format("PRY: %.1f, %.1f, %.1f (deg)",
-                tag.ftcPose.pitch, tag.ftcPose.roll, tag.ftcPose.yaw));
-        telemetry.addLine(String.format("RBE: %.1f (cm), %.1f (deg), %.1f (deg)",
-                tag.ftcPose.range, tag.ftcPose.bearing, tag.ftcPose.elevation));
+        // Convert the "facing direction" of the tag to radians for trig
+        double alpha = Math.toRadians(tagAngle);
 
-        if (robotPose != null) {
-            telemetry.addLine("---- ROBOT FIELD POSE ----");
-            telemetry.addLine(String.format("Field X: %.1f cm  (%.1f in)", robotPose.x, robotPose.x / 2.54));
-            telemetry.addLine(String.format("Field Y: %.1f cm  (%.1f in)", robotPose.y, robotPose.y / 2.54));
-            telemetry.addLine(String.format("Heading: %.1f deg", robotPose.heading));
-        }
-    }
+        // Compensate for camera mount position relative to robot center
+        double adjY = detection.ftcPose.y + CAMERA_FORWARD_OFFSET;
+        double adjX = detection.ftcPose.x + CAMERA_LEFT_OFFSET;
 
-    // Returns the known field position and heading of each goal tag in cm
-    private FieldPose getAprilTagFieldPose(int tagId) {
-        final double IN_TO_CM = 2.54;
-        switch (tagId) {
-            case TAG_BLUE_GOAL:
-                return new FieldPose(-72 * IN_TO_CM,  72 * IN_TO_CM, -90.0);
-            case TAG_RED_GOAL:
-                return new FieldPose( 72 * IN_TO_CM,  72 * IN_TO_CM,  90.0);
-            default:
-                return null;
-        }
-    }
+        // Rotation Matrix: Projects the camera's relative vector onto the grid axes.
+        // Corrects for the 45-degree angle of the goal corners.
+        double rotatedX = (adjY * Math.cos(alpha)) - (adjX * Math.sin(alpha));
+        double rotatedY = (adjY * Math.sin(alpha)) + (adjX * Math.cos(alpha));
 
-    // Converts the camera-relative tag pose into the robot's position on the field
-    private FieldPose getRobotFieldPose(AprilTagDetection tag) {
+        // Translation: Find robot position by adding the rotated relative vector to the Tag position.
+        double robotX = tagX + rotatedX;
+        double robotY = tagY + rotatedY;
 
-        FieldPose tagPose = getAprilTagFieldPose(tag.id);
-        if (tagPose == null || tag.ftcPose == null) return null;
+        // Heading: Compare Tag direction to Camera Yaw to find robot field orientation.
+        double robotHeading = AngleUnit.normalizeDegrees(tagAngle - detection.ftcPose.yaw - 180);
 
-        double robotXRel = tag.ftcPose.x;
-        double robotYRel = tag.ftcPose.y;
-
-        double headingRad = Math.toRadians(tagPose.heading);
-
-        double rotX = robotXRel * Math.cos(headingRad) - robotYRel * Math.sin(headingRad);
-        double rotY = robotXRel * Math.sin(headingRad) + robotYRel * Math.cos(headingRad);
-
-        double fieldX = tagPose.x - rotX;
-        double fieldY = tagPose.y - rotY;
-
-        double fieldHeading = tagPose.heading - tag.ftcPose.yaw;
-
-        return new FieldPose(fieldX, fieldY, fieldHeading);
-    }
-
-    // Closes the vision portal when the op mode ends
-    private void stopAprilTag() {
-        if (visionPortal != null) {
-            visionPortal.close();
-        }
+        return new RobotPose(robotX, robotY, robotHeading);
     }
 }
