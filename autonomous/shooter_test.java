@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
 @TeleOp(name = "shooter_test", group = "Linear OpMode")
 public class shooter_test extends LinearOpMode {
@@ -14,20 +15,22 @@ public class shooter_test extends LinearOpMode {
     private Servo     hoodServo;
 
     // ── Tunable constants ─────────────────────────────────────────────────────
-    private static final double TICKS_PER_REV   = 50;
-    private static final double SERVO_MIN        = 0;
-    private static final double SERVO_MAX        = 0.2;
+    // REV HD Hex Motor = 28 counts per revolution at the motor shaft (bare motor, no gearbox)
+    // If you have a gearbox attached, multiply: e.g. 40:1 gearbox = 28 * 40 = 1120
+    private static final double TICKS_PER_REV   = 28.0;   // ← FIXED (was 50, wrong for HD Hex)
+    private static final double SERVO_MIN        = 0.0;
+    private static final double SERVO_MAX        = 0.22;
     private static final double SERVO_STEP       = 0.01;
     private static final double RPM_STEP         = 100.0;
     private static final double RPM_MIN          = 0.0;
-    private static final double RPM_MAX          = 2000.0;
+    private static final double RPM_MAX          = 6000.0; // HD Hex free-spin ~6000 RPM
 
     // ── State ─────────────────────────────────────────────────────────────────
-    private double  servoPos      = 0.0;   // start at minimum
+    private double  servoPos      = 0.0;
     private double  targetRPM     = 0.0;
     private boolean motorRunning  = false;
 
-    // Button edge-detection flags (true = was pressed last loop)
+    // Button edge-detection flags
     private boolean lastDpadUp    = false;
     private boolean lastDpadDown  = false;
     private boolean lastDpadRight = false;
@@ -37,21 +40,29 @@ public class shooter_test extends LinearOpMode {
     @Override
     public void runOpMode() {
 
+        // ── Hardware init ──────────────────────────────────────────────────────
         shooterMotor = hardwareMap.get(DcMotorEx.class, "Shooter");
-//        shooterMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//        shooterMotor.setDirection(DcMotorEx.Direction.FORWARD);
-//        shooterMotor.setVelocity(0);
+        shooterMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        shooterMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        shooterMotor.setDirection(DcMotorEx.Direction.FORWARD);
+        // FLOAT so the flywheel can spin down freely instead of braking hard
+        shooterMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        shooterMotor.setVelocity(0);
 
         hoodServo = hardwareMap.get(Servo.class, "hood");
         hoodServo.setPosition(servoPos);
 
-        telemetry.addData("Status", "Initialized — waiting for start");
+        // ── Init telemetry ─────────────────────────────────────────────────────
+        telemetry.addData("Status",        "Initialized — waiting for start");
+        telemetry.addData("TICKS_PER_REV", TICKS_PER_REV);
+        telemetry.addData("Motor mode",    shooterMotor.getMode());
         telemetry.update();
+
         waitForStart();
 
         while (opModeIsActive()) {
 
-            // ── Edge detection helpers ────────────────────────────────────────
+            // ── Read gamepad ──────────────────────────────────────────────────
             boolean dpadUpNow    = gamepad1.dpad_up;
             boolean dpadDownNow  = gamepad1.dpad_down;
             boolean dpadRightNow = gamepad1.dpad_right;
@@ -90,25 +101,62 @@ public class shooter_test extends LinearOpMode {
                 }
             }
 
+            // ── Apply velocity setpoint ────────────────────────────────────────
+            // setVelocity(ticks/sec) — no AngleUnit = ticks per second
+            double targetTicksPerSec = 0;
             if (motorRunning) {
-                double ticksPerSec = (targetRPM * TICKS_PER_REV) / 60.0;
-                shooterMotor.setVelocity(ticksPerSec);
+                targetTicksPerSec = (targetRPM * TICKS_PER_REV) / 60.0;
+                shooterMotor.setVelocity(targetTicksPerSec);
             }
 
-            double actualRPM = (shooterMotor.getVelocity(AngleUnit.DEGREES) / 360.0) * 60.0;
+            // ── Read back actual state ────────────────────────────────────────
+            // getVelocity() with no args → ticks/sec (matches our setVelocity units)
+            double rawVelTicksPerSec  = shooterMotor.getVelocity();
+
+            // getVelocity(DEGREES) → degrees/sec, useful for an RPM display
+            double velDegPerSec = shooterMotor.getVelocity(AngleUnit.DEGREES);
+            double actualRPM    = (velDegPerSec / 360.0) * 60.0;
+
+            double motorPower   = shooterMotor.getPower();
+            double motorCurrent = shooterMotor.getCurrent(CurrentUnit.AMPS);
+            int    encoderTicks = shooterMotor.getCurrentPosition();
+            double rpmError     = targetRPM - actualRPM;
 
             // ── Telemetry ──────────────────────────────────────────────────────
-            telemetry.addData("Hood Servo", "");
-            telemetry.addData("  Position",    "%.2f  (dpad up/down, step=%.2f)", servoPos, SERVO_STEP);
-            telemetry.addData("  Range",       "[%.2f  →  %.2f]", SERVO_MIN, SERVO_MAX);
+            telemetry.addLine("=== HOOD SERVO ===");
+            telemetry.addData("  Position",   "%.3f  (dpad up/down)", servoPos);
+            telemetry.addData("  Range",      "[%.2f → %.2f]  step=%.2f",
+                              SERVO_MIN, SERVO_MAX, SERVO_STEP);
+
             telemetry.addLine();
-            telemetry.addData("Shooter Motor", "");
-            telemetry.addData("  Motor running",  motorRunning ? "YES  (RB to stop)" : "NO  (RB to start)");
-            telemetry.addData("  Target RPM",  "%.0f  (dpad right/left, step=%.0f)", targetRPM, RPM_STEP);
-            telemetry.addData("  Actual RPM",  "%.1f", actualRPM);
-            telemetry.addData("  RPM error",   "%.1f", targetRPM - actualRPM);
+            telemetry.addLine("=== SHOOTER MOTOR ===");
+            telemetry.addData("  State",         motorRunning ? "RUNNING (RB=stop)" : "STOPPED (RB=start)");
+            telemetry.addData("  RunMode",        shooterMotor.getMode());
+
+            telemetry.addLine();
+            telemetry.addLine("-- Velocity --");
+            telemetry.addData("  Target RPM",          "%.0f  (dpad L/R, step=%.0f)",
+                              targetRPM, RPM_STEP);
+            telemetry.addData("  Actual RPM",          "%.1f", actualRPM);
+            telemetry.addData("  RPM error",           "%.1f  (%s)", rpmError,
+                              Math.abs(rpmError) < 50 ? "ON TARGET" : "OFF");
+            telemetry.addData("  Target ticks/sec",    "%.1f", targetTicksPerSec);
+            telemetry.addData("  Actual ticks/sec",    "%.1f", rawVelTicksPerSec);
+
+            telemetry.addLine();
+            telemetry.addLine("-- Motor diagnostics --");
+            telemetry.addData("  Output power",   "%.3f  (should rise toward 1.0)", motorPower);
+            telemetry.addData("  Current (A)",    "%.2f  (stall ~9 A)", motorCurrent);
+            telemetry.addData("  Encoder pos",    encoderTicks);
+
+            telemetry.addLine();
+            telemetry.addLine("-- Config check --");
+            telemetry.addData("  TICKS_PER_REV", "%.0f  (HD Hex bare=28)", TICKS_PER_REV);
+            telemetry.addData("  Max RPM set",   "%.0f", RPM_MAX);
+
             telemetry.update();
 
+            // ── Update edge-detection flags ───────────────────────────────────
             lastDpadUp    = dpadUpNow;
             lastDpadDown  = dpadDownNow;
             lastDpadRight = dpadRightNow;
@@ -116,7 +164,7 @@ public class shooter_test extends LinearOpMode {
             lastRB        = rbNow;
         }
 
-        // Clean stop on OpMode end
+        // Clean stop
         shooterMotor.setVelocity(0);
     }
 }
