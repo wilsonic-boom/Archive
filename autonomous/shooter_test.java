@@ -17,7 +17,7 @@ public class shooter_test extends LinearOpMode {
     // ── Tunable constants ─────────────────────────────────────────────────────
     // REV HD Hex Motor = 28 counts per revolution at the motor shaft (bare motor, no gearbox)
     // If you have a gearbox attached, multiply: e.g. 40:1 gearbox = 28 * 40 = 1120
-    private static final double TICKS_PER_REV   = 28.0;   // ← FIXED (was 50, wrong for HD Hex)
+    private static final double TICKS_PER_REV   = 28.0;
     private static final double SERVO_MIN        = 0.0;
     private static final double SERVO_MAX        = 0.22;
     private static final double SERVO_STEP       = 0.01;
