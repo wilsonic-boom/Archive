@@ -50,7 +50,7 @@ public class shooter_test extends LinearOpMode {
                 + 1460); // * (TICKS_PER_REV / 60.0); // maybe the  * (TICKS_PER_REV / 60.0) not needed?
     }
 
-    public static double hoodServo(double x, double y) {
+    public static double hoodServoCalc(double x, double y) {
         return 0.037524 * Math.pow(Math.abs(y), 0.5)
                 - 0.027099 * Math.pow(Math.abs(x), 1.0 / 3.0)
                 - 0.0051773 * Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2))
@@ -136,7 +136,7 @@ public class shooter_test extends LinearOpMode {
             }
 
             double targetTicksPerSec = velocity(XPos, YPos);
-            double targetServo = hoodServo(XPos, YPos);
+            double targetServo = hoodServoCalc(XPos, YPos);
             if (motorRunning) {
                 shooterMotor.setVelocity(targetTicksPerSec);
                 hoodServo.setPosition(targetServo);
@@ -156,6 +156,11 @@ public class shooter_test extends LinearOpMode {
             telemetry.addLine("Position");
             telemetry.addData("  X",   "%.3f  (dpad L/R)", XPos);
             telemetry.addData("  Y",   "%.3f  (dpad up/down)", YPos);
+
+            telemetry.addLine("=== HOOD SERVO ===");
+            telemetry.addData("  Position",   "%.3f  (automatically done)", hoodServo.getPosition());
+
+
 //            telemetry.addLine("=== HOOD SERVO ===");
 //            telemetry.addData("  Position",   "%.3f  (dpad up/down)", servoPos);
 //            telemetry.addData("  Range",      "[%.2f → %.2f]  step=%.2f",
