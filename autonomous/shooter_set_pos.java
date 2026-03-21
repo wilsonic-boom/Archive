@@ -8,8 +8,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
-@TeleOp(name = "shooter_test", group = "Linear OpMode")
-public class shooter_test extends LinearOpMode {
+@TeleOp(name = "shooter_set_pos", group = "Linear OpMode")
+public class shooter_set_pos extends LinearOpMode {
 
     private DcMotorEx shooterMotor;
     private DcMotorEx intakeMotor;
@@ -75,9 +75,7 @@ public class shooter_test extends LinearOpMode {
         transferMotor.setVelocity(0);
 
         hoodServo = hardwareMap.get(Servo.class, "hood");
-        hoodServo.setPosition(servoPos);
         gateServo = hardwareMap.get(Servo.class, "Gate");
-        gateServo.setPosition(servoPos);
 
         // ── Init telemetry ─────────────────────────────────────────────────────
         telemetry.addData("Status",        "Initialized — waiting for start");
@@ -122,7 +120,7 @@ public class shooter_test extends LinearOpMode {
                 intakeRunning = !intakeRunning;
                 if (!intakeRunning) {
                     intakeMotor.setVelocity(0);
-                    if (!gamepad1.A) {
+                    if (!gamepad1.a) {
                         transferMotor.setVelocity(0);
                     } else {
                         transferMotor.setPower(-1);
@@ -160,6 +158,15 @@ public class shooter_test extends LinearOpMode {
             telemetry.addLine("=== HOOD SERVO ===");
             telemetry.addData("  Position",   "%.3f  (automatically done)", hoodServo.getPosition());
 
+            telemetry.addLine();
+            telemetry.addLine("=== SHOOTER MOTOR ===");
+            telemetry.addData("  State",         motorRunning ? "RUNNING (RB=stop)" : "STOPPED (RB=start)");
+            telemetry.addData("  RunMode",        shooterMotor.getMode());
+
+            telemetry.addLine();
+            telemetry.addLine("-- Velocity --");
+            telemetry.addData("  Target ticks/sec",    "%.1f", targetTicksPerSec);
+            telemetry.addData("  Actual ticks/sec",    "%.1f", rawVelTicksPerSec);
 
 //            telemetry.addLine("=== HOOD SERVO ===");
 //            telemetry.addData("  Position",   "%.3f  (dpad up/down)", servoPos);
