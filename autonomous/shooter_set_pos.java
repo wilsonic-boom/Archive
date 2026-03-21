@@ -151,38 +151,41 @@ public class shooter_test extends LinearOpMode {
             double motorPower   = shooterMotor.getPower();
             double motorCurrent = shooterMotor.getCurrent(CurrentUnit.AMPS);
             int    encoderTicks = shooterMotor.getCurrentPosition();
-            double rpmError     = targetRPM - actualRPM;
+//            double rpmError     = targetRPM - actualRPM;
 
-            telemetry.addLine("=== HOOD SERVO ===");
-            telemetry.addData("  Position",   "%.3f  (dpad up/down)", servoPos);
-            telemetry.addData("  Range",      "[%.2f → %.2f]  step=%.2f",
-                    SERVO_MIN, SERVO_MAX, SERVO_STEP);
-
-            telemetry.addLine();
-            telemetry.addLine("=== SHOOTER MOTOR ===");
-            telemetry.addData("  State",         motorRunning ? "RUNNING (RB=stop)" : "STOPPED (RB=start)");
-            telemetry.addData("  RunMode",        shooterMotor.getMode());
-
-            telemetry.addLine();
-            telemetry.addLine("-- Velocity --");
-            telemetry.addData("  Target RPM",          "%.0f  (dpad L/R, step=%.0f)",
-                    targetRPM, RPM_STEP);
-            telemetry.addData("  Actual RPM",          "%.1f", actualRPM);
-            telemetry.addData("  RPM error",           "%.1f  (%s)", rpmError,
-                    Math.abs(rpmError) < 50 ? "ON TARGET" : "OFF");
-            telemetry.addData("  Target ticks/sec",    "%.1f", targetTicksPerSec);
-            telemetry.addData("  Actual ticks/sec",    "%.1f", rawVelTicksPerSec);
-
-            telemetry.addLine();
-            telemetry.addLine("-- Motor diagnostics --");
-            telemetry.addData("  Output power",   "%.3f  (should rise toward 1.0)", motorPower);
-            telemetry.addData("  Current (A)",    "%.2f  (stall ~9 A)", motorCurrent);
-            telemetry.addData("  Encoder pos",    encoderTicks);
-
-            telemetry.addLine();
-            telemetry.addLine("-- Config check --");
-            telemetry.addData("  TICKS_PER_REV", "%.0f  (HD Hex bare=28)", TICKS_PER_REV);
-            telemetry.addData("  Max RPM set",   "%.0f", RPM_MAX);
+            telemetry.addLine("Position");
+            telemetry.addData("  X",   "%.3f  (dpad L/R)", XPos);
+            telemetry.addData("  Y",   "%.3f  (dpad up/down)", YPos);
+//            telemetry.addLine("=== HOOD SERVO ===");
+//            telemetry.addData("  Position",   "%.3f  (dpad up/down)", servoPos);
+//            telemetry.addData("  Range",      "[%.2f → %.2f]  step=%.2f",
+//                    SERVO_MIN, SERVO_MAX, SERVO_STEP);
+//
+//            telemetry.addLine();
+//            telemetry.addLine("=== SHOOTER MOTOR ===");
+//            telemetry.addData("  State",         motorRunning ? "RUNNING (RB=stop)" : "STOPPED (RB=start)");
+//            telemetry.addData("  RunMode",        shooterMotor.getMode());
+//
+//            telemetry.addLine();
+//            telemetry.addLine("-- Velocity --");
+//            telemetry.addData("  Target RPM",          "%.0f  (dpad L/R, step=%.0f)",
+//                    targetRPM, RPM_STEP);
+//            telemetry.addData("  Actual RPM",          "%.1f", actualRPM);
+//            telemetry.addData("  RPM error",           "%.1f  (%s)", rpmError,
+//                    Math.abs(rpmError) < 50 ? "ON TARGET" : "OFF");
+//            telemetry.addData("  Target ticks/sec",    "%.1f", targetTicksPerSec);
+//            telemetry.addData("  Actual ticks/sec\",    \"%.1f\", rawVelTicksPerSec);\n" +
+//                    "\n" +
+//                    "            telemetry.addLine();\n" +
+//                    "            telemetry.addLine(\"-- Motor diagnostics --\");\n" +
+//                    "            telemetry.addData(\"  Output power\",   \"%.3f  (should rise toward 1.0)\", motorPower);\n" +
+//                    "            telemetry.addData(\"  Current (A)", "%.2f  (stall ~9 A)", motorCurrent);
+//            telemetry.addData("  Encoder pos", encoderTicks);
+//
+//            telemetry.addLine();
+//            telemetry.addLine("-- Config check --");
+//            telemetry.addData("  TICKS_PER_REV", "%.0f  (HD Hex bare=28)", TICKS_PER_REV);
+////            telemetry.addData("  Max RPM set",   "%.0f", RPM_MAX);
 
             telemetry.update();
 
