@@ -74,7 +74,7 @@ public class shooter_set_pos extends LinearOpMode {
         transferMotor = hardwareMap.get(DcMotorEx.class, "IntakeControl");
         transferMotor.setVelocity(0);
 
-        hoodServo = hardwareMap.get(Servo.class, "hood");
+        hoodServo = hardwareMap.get(Servo.class, "Hood");
         gateServo = hardwareMap.get(Servo.class, "Gate");
 
         // ── Init telemetry ─────────────────────────────────────────────────────
@@ -108,38 +108,67 @@ public class shooter_set_pos extends LinearOpMode {
             if (pressedRight) { XPos = Math.min(XPos + X_STEP, X_MAX); }
             if (pressedLeft) { XPos = Math.max(XPos - X_STEP, X_MIN); }
 
-            if (pressedRB) {
-                motorRunning = !motorRunning;
-                if (!motorRunning) {
-                    shooterMotor.setVelocity(0);
-                    gateServo.setPosition(1);
-                }
-            }
+//            if (pressedRB) {
+//                motorRunning = !motorRunning;
+//                if (!motorRunning) {
+//                    shooterMotor.setVelocity(0);
+//                    gateServo.setPosition(1);
+//                }
+//            }
 
-            if (pressedLB) {
-                intakeRunning = !intakeRunning;
-                if (!intakeRunning) {
-                    intakeMotor.setVelocity(0);
-                    if (!gamepad1.a) {
-                        transferMotor.setVelocity(0);
-                    } else {
-                        transferMotor.setPower(-1);
-                    }
-                }
-            }z
-
-            if (intakeRunning) {
-                intakeMotor.setPower(1);
-                transferMotor.setPower(1);
-            }
+//            if (pressedLB) {
+//                intakeRunning = !intakeRunning;
+//                if (!intakeRunning) {
+//                    intakeMotor.setVelocity(0);
+//                    if (!gamepad1.a && !gamepad1.b)  {
+//                        transferMotor.setVelocity(0);
+//                    }
+//                }
+//            }
 
             double targetTicksPerSec = velocity(XPos, YPos);
             double targetServo = hoodServoCalc(XPos, YPos);
-            if (motorRunning) {
+
+            if (gamepad1.a) {
                 shooterMotor.setVelocity(targetTicksPerSec);
                 hoodServo.setPosition(targetServo);
+                sleep(300);
                 gateServo.setPosition(0.8);
+                transferMotor.setPower(-1);
+                sleep(500);
+                transferMotor.setVelocity(0);
+                gateServo.setPosition(1);
+                sleep(100);
             }
+
+            if (gamepad1.b) {
+                for (int i = 0; i < 3; i++) {
+                    shooterMotor.setVelocity(targetTicksPerSec);
+                    hoodServo.setPosition(targetServo);
+                    sleep(300);
+                    gateServo.setPosition(0.8);
+                    transferMotor.setPower(-1);
+                    sleep(500);
+                    transferMotor.setVelocity(0);
+                    gateServo.setPosition(1);
+                    sleep(100);
+                }
+            }
+
+            if (gamepad1.left_bumper) {
+                intakeMotor.setPower(-1);
+                transferMotor.setPower(1);
+            } else {
+                intakeMotor.setPower(0);
+                transferMotor.setPower(0);
+            }
+
+
+//            if (motorRunning) {
+//                shooterMotor.setVelocity(targetTicksPerSec);
+//                hoodServo.setPosition(targetServo);
+//                gateServo.setPosition(0.8);
+//            }
 
             double rawVelTicksPerSec  = shooterMotor.getVelocity();
 
