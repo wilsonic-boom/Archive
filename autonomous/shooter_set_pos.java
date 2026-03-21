@@ -92,15 +92,15 @@ public class shooter_set_pos extends LinearOpMode {
             boolean dpadDownNow  = gamepad1.dpad_down;
             boolean dpadRightNow = gamepad1.dpad_right;
             boolean dpadLeftNow  = gamepad1.dpad_left;
-            boolean rbNow        = gamepad1.right_bumper;
-            boolean lbNow        = gamepad1.left_bumper;
+//            boolean rbNow        = gamepad1.right_bumper;
+//            boolean lbNow        = gamepad1.left_bumper;
 
             boolean pressedUp    = dpadUpNow    && !lastDpadUp;
             boolean pressedDown  = dpadDownNow  && !lastDpadDown;
             boolean pressedRight = dpadRightNow && !lastDpadRight;
             boolean pressedLeft  = dpadLeftNow  && !lastDpadLeft;
-            boolean pressedRB    = rbNow        && !lastRB;
-            boolean pressedLB    = lbNow        && !lastLB;
+//            boolean pressedRB    = rbNow        && !lastRB;
+//            boolean pressedLB    = lbNow        && !lastLB;
 
             // ── dpad up/down → servo position ─────────────────────────────────
             if (pressedUp) { YPos = Math.min(YPos + Y_STEP, Y_MAX); }
@@ -129,7 +129,19 @@ public class shooter_set_pos extends LinearOpMode {
             double targetTicksPerSec = velocity(XPos, YPos);
             double targetServo = hoodServoCalc(XPos, YPos);
 
-            if (gamepad1.a) {
+//            if (gamepad1.a) {
+//                shooterMotor.setVelocity(targetTicksPerSec);
+//                hoodServo.setPosition(targetServo);
+//                sleep(300);
+//                gateServo.setPosition(0.8);
+//                transferMotor.setPower(-1);
+//                sleep(500);
+//                transferMotor.setVelocity(0);
+//                gateServo.setPosition(1);
+//                sleep(100);
+//            }
+
+            if (gamepad1.right_bumper) {
                 shooterMotor.setVelocity(targetTicksPerSec);
                 hoodServo.setPosition(targetServo);
                 sleep(300);
@@ -139,20 +151,6 @@ public class shooter_set_pos extends LinearOpMode {
                 transferMotor.setVelocity(0);
                 gateServo.setPosition(1);
                 sleep(100);
-            }
-
-            if (gamepad1.b) {
-                for (int i = 0; i < 3; i++) {
-                    shooterMotor.setVelocity(targetTicksPerSec);
-                    hoodServo.setPosition(targetServo);
-                    sleep(300);
-                    gateServo.setPosition(0.8);
-                    transferMotor.setPower(-1);
-                    sleep(500);
-                    transferMotor.setVelocity(0);
-                    gateServo.setPosition(1);
-                    sleep(100);
-                }
             }
 
             if (gamepad1.left_bumper) {
@@ -234,7 +232,7 @@ public class shooter_set_pos extends LinearOpMode {
             lastDpadDown  = dpadDownNow;
             lastDpadRight = dpadRightNow;
             lastDpadLeft  = dpadLeftNow;
-            lastRB        = rbNow;
+//            lastRB        = rbNow;
         }
 
         shooterMotor.setVelocity(0);
