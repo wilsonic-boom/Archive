@@ -29,6 +29,9 @@
 
 package org.firstinspires.ftc.teamcode.auto;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -340,6 +343,114 @@ public class motor_encodersmotor extends LinearOpMode {
             // ── Go to shoot pos and shoot ──
             // ADD GO TO SHOOT POS AND SHOOT HERE
         }
+    }
+
+    public static double velocity(double x, double y) {
+        return (44.297 * Math.pow(Math.abs(y), 1.0 / 3.0)
+                - 16.893 * Math.abs(x)
+                + 0.0018285 * Math.pow(Math.abs(y), 2)
+                + 5.0046e-05 * Math.pow(Math.abs(x), 2) * Math.pow(y, 2)
+                + 1460); // * (TICKS_PER_REV / 60.0); // maybe the  * (TICKS_PER_REV / 60.0) not needed?
+    }
+
+    public static double hoodServoCalc(double x, double y) {
+        return 0.037524 * Math.pow(Math.abs(y), 0.5)
+                - 0.027099 * Math.pow(Math.abs(x), 1.0 / 3.0)
+                - 0.0051773 * Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2))
+                + 0.18998;
+    }
+
+    public static double distance_formula(double x1, double y1, double x2, double y2) {
+        return Math.sqrt(
+                Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)
+        );
+    }
+
+    public static List<Double> close_shooter_pos(double x, double y) {
+        List<Double> result = new ArrayList<>();
+
+        if (y>x-48 && y<-x && y<x && y>-x-48) {
+            if (y < -24) {
+                result.add(0);
+                result.add(-48);
+            } else {
+                result.add(0);
+                result.add(0);
+            }
+        } else if (x<0) {
+            double x1 = (x-y)/2;
+            double y1 = (y-x)/2;
+            double x2 = (x+y+48)/2;
+            double y2 = (x+y-48)/2;
+
+            if (distance_formula(x, y, x1, y1) < distance_formula(x, y, x2, y2)) {
+                result.add(x1);
+                result.add(y1);
+            } else {
+                result.add(x2);
+                result.add(y2);
+            }
+        } else {
+            double x1 = (x+y)/2;
+            double y1 = x1;
+            double x2 = (x-y-48)/2;
+            double y2 = (y-x-48)/2;
+
+            if (distance_formula(x, y, x1, y1) < distance_formula(x, y, x2, y2)) {
+                result.add(x1);
+                result.add(y1);
+            } else {
+                result.add(x2);
+                result.add(y2);
+            }
+        }
+
+        return result;
+    }
+
+    public static void goToArea(double x, double y) {
+        if (!(y<x-48 && y<-x-48) && !(-x<y && x<y)) { // if its not alr in shooting area, go to it and face shooter
+            List<Double> values = close_shooter_pos(x, y);
+
+            double x1 = values.get(0);
+            double y1 = values.get(1);
+            double x2 = 0;
+            double y2 = 66;
+
+            if (red) {
+                x2 = 66;
+            } else {
+                x2 = -66;
+            }
+            double bearing = (90 - Math.toDegrees(Math.atan2(y2 - y1, x2 - x1)) + 360) % 360;
+
+            encoderdrive(x1, y1, bearing, true, 5);
+        } else { // face shooter
+            double x2 = 0;
+            double y2 = 66;
+
+            if (red) {
+                x2 = 66;
+            } else {
+                x2 = -66;
+            }
+            double bearing = (90 - Math.toDegrees(Math.atan2(y2 - y, x2 - x)) + 360) % 360;
+
+            encoderdrive(x, y, bearing, true, 5);
+        }
+    }
+
+    public void goAndShoot() {
+        goToArea(FieldX, FieldY); // go to shooter area and face shooter
+        Shooter.setVelocity(targetTicksPerSec);
+        hoodServo.setPosition(targetServo);
+        sleep(750);
+        gateServo.setPosition(0.8);
+        IntakeControl.setPower(-1);
+        sleep(500);
+        IntakeControl.setVelocity(0);
+        gateServo.setPosition(1);
+        sleep(100);
     }
 
 }
