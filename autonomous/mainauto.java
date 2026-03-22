@@ -371,11 +371,11 @@ public class motor_encodersmotor extends LinearOpMode {
 
         if (y>x-48 && y<-x && y<x && y>-x-48) {
             if (y < -24) {
-                result.add(0);
-                result.add(-48);
+                result.add(0.0);
+                result.add(-48.0);
             } else {
-                result.add(0);
-                result.add(0);
+                result.add(0.0);
+                result.add(0.0);
             }
         } else if (x<0) {
             double x1 = (x-y)/2;
@@ -417,7 +417,7 @@ public class motor_encodersmotor extends LinearOpMode {
             double x2 = 0;
             double y2 = 66;
 
-            if (red) {
+            if (Alliance == Alliance.RED) {
                 x2 = 66;
             } else {
                 x2 = -66;
@@ -429,7 +429,7 @@ public class motor_encodersmotor extends LinearOpMode {
             double x2 = 0;
             double y2 = 66;
 
-            if (red) {
+            if (Alliance == Alliance.RED) {
                 x2 = 66;
             } else {
                 x2 = -66;
