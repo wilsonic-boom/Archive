@@ -456,5 +456,4 @@ public class motor_encodersmotor extends LinearOpMode {
         gateServo.setPosition(1);
         sleep(100);
     }
-
 }
