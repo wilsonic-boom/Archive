@@ -191,7 +191,7 @@ public class shooter_set_pos extends LinearOpMode {
             targetServo = Math.max(0.0, Math.min(1.0, targetServo));
 
             if (gamepad1.right_bumper) {
-                goToArea(Xpos, YPos); // go to shooter area and face shooter
+                goToArea(XPos, YPos); // go to shooter area and face shooter
                 shooterMotor.setVelocity(targetTicksPerSec);
                 hoodServo.setPosition(targetServo);
                 sleep(750);
