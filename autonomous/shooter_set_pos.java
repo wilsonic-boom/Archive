@@ -112,7 +112,7 @@ public class shooter_set_pos extends LinearOpMode {
 
     public static void goToArea(double x, double y) {
         if (!(y<x-48 && y<-x-48) || !(-x<y && x<y)) { // if its not alr in shooting area, go to it and face shooter
-            List<Integer> values = close_shooter_pos(x, y);
+            List<Double> values = close_shooter_pos(x, y);
 
             double x1 = values.get(0);
             double y1 = values.get(1);
