@@ -9,6 +9,10 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.vision.VisionPortal;
+import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
+import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 @TeleOp
 public class Teleop extends LinearOpMode {
@@ -21,6 +25,13 @@ public class Teleop extends LinearOpMode {
 
 
     boolean intake = false;
+
+    private AprilTagProcessor aprilTag;
+    private VisionPortal       visionPortal;
+
+    // ── Camera resolution — match your webcam's supported resolution ──────────
+    private static final int CAM_WIDTH  = 640;
+    private static final int CAM_HEIGHT = 480;
 
     public static double velocity(double x, double y) {
         return (44.297 * Math.pow(Math.abs(y), 1.0 / 3.0)
@@ -76,6 +87,20 @@ public class Teleop extends LinearOpMode {
                 RevHubOrientationOnRobot.UsbFacingDirection.UP));
         // Without this, the REV Hub's orientation is assumed to be logo up / USB forward
         imu.initialize(parameters);
+
+        // ── Build the AprilTag processor ──────────────────────────────────────
+        aprilTag = new AprilTagProcessor.Builder()
+                .setDrawAxes(true)             // draws XYZ axes on tag in camera stream
+                .setDrawCubeProjection(true)   // draws a cube on the tag
+                .setDrawTagOutline(true)        // outlines the detected tag
+                .build();
+
+        // ── Build the Vision Portal (attaches processor to the webcam) ────────
+        visionPortal = new VisionPortal.Builder()
+                .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
+                .setCameraResolution(new android.util.Size(CAM_WIDTH, CAM_HEIGHT))
+                .addProcessor(aprilTag)
+                .build();
 
         waitForStart();
 
@@ -140,6 +165,19 @@ public class Teleop extends LinearOpMode {
                 FRmotor.setPower(FRpower/2);
                 BRmotor.setPower(BRpower/2);
                 telemetry.addData("Speed", "Slow");
+            }
+
+            List<AprilTagDetection> detections = aprilTag.getDetections();
+
+            if (!detections.isEmpty()) {
+                for (AprilTagDetection tag : detections) {
+                    telemetry.addLine("  ── Metric equivalents ──");
+                    telemetry.addData("  Range",    "%.3f", tag.ftcPose.range);
+                    telemetry.addData("  X",        "%.3f", tag.ftcPose.x);
+                    telemetry.addData("  Y",        "%.3f", tag.ftcPose.y);
+                    telemetry.addData("  Z",        "%.3f", tag.ftcPose.z);
+                    telemetry.addData("  2D Range",        "%.3f", Math.sqrt(Math.pow(tag.ftcPose.range, 2) + Math.pow(tag.ftcPose.z, 2)));
+                }
             }
 
 
