@@ -155,13 +155,13 @@ public class Teleop extends LinearOpMode {
                 double targetServo = hoodServoCalc(FieldX, FieldY);
                 targetServo = Math.max(0.0, Math.min(1.0, targetServo));
                 Shooter.setVelocity(targetTicksPerSec);
-                hoodServo.setPosition(targetServo);
+                hood.setPosition(targetServo);
                 sleep(750);
-                gateServo.setPosition(0.8);
+                gate.setPosition(0.8);
                 IntakeControl.setPower(-1);
                 sleep(500);
                 IntakeControl.setPower(0);
-                gateServo.setPosition(1);
+                gate.setPosition(1);
                 sleep(100);
             }
 
