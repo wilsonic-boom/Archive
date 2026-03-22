@@ -441,6 +441,10 @@ public class motor_encodersmotor extends LinearOpMode {
     }
 
     public void goAndShoot() {
+        double targetTicksPerSec = velocity(FieldX, FieldY);
+        double targetServo = hoodServoCalc(FieldX, FieldY);
+        targetServo = Math.max(0.0, Math.min(1.0, targetServo));
+
         goToArea(FieldX, FieldY); // go to shooter area and face shooter
         Shooter.setVelocity(targetTicksPerSec);
         hoodServo.setPosition(targetServo);
