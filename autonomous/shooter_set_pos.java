@@ -15,8 +15,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 public class shooter_set_pos extends LinearOpMode {
 
     private DcMotorEx shooterMotor;
-    private DcMotorEx intakeMotor;
-    private DcMotorEx transferMotor;
+    private DcMotorEx IntakeMain;
+    private DcMotorEx IntakeControl;
     private Servo hoodServo;
     private Servo gateServo;
 
@@ -32,9 +32,9 @@ public class shooter_set_pos extends LinearOpMode {
     private static final double X_MAX = 72; // HD Hex free-spin ~6000 RPM
 
     // ── State ─────────────────────────────────────────────────────────────────
-    private double YPos = 0.0;
-    private double XPos = 0.0;
-    private double bearing = 0.0;
+    private double FieldY = 0.0;
+    private double FieldX = 0.0;
+    private double FieldRotation = 0.0;
     private boolean intakeRunning  = false;
     static boolean red = true;
 
@@ -146,18 +146,18 @@ public class shooter_set_pos extends LinearOpMode {
     public void runOpMode() {
 
         // ── Hardware init ──────────────────────────────────────────────────────
-        shooterMotor = hardwareMap.get(DcMotorEx.class, "Shooter");
-        shooterMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        shooterMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        shooterMotor.setDirection(DcMotorEx.Direction.FORWARD);
+        Shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
+        Shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        Shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        Shooter.setDirection(DcMotorEx.Direction.FORWARD);
         // FLOAT so the flywheel can spin down freely instead of braking hard
-        shooterMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        shooterMotor.setVelocity(0);
+        Shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        Shooter.setVelocity(0);
 
-        intakeMotor = hardwareMap.get(DcMotorEx.class, "IntakeMain");
-        intakeMotor.setVelocity(0);
-        transferMotor = hardwareMap.get(DcMotorEx.class, "IntakeControl");
-        transferMotor.setVelocity(0);
+        IntakeMain = hardwareMap.get(DcMotorEx.class, "IntakeMain");
+        IntakeMain.setVelocity(0);
+        IntakeControl = hardwareMap.get(DcMotorEx.class, "IntakeControl");
+        IntakeControl.setVelocity(0);
 
         hoodServo = hardwareMap.get(Servo.class, "Hood");
         gateServo = hardwareMap.get(Servo.class, "Gate");
@@ -165,7 +165,7 @@ public class shooter_set_pos extends LinearOpMode {
         // ── Init telemetry ─────────────────────────────────────────────────────
         telemetry.addData("Status",        "Initialized — waiting for start");
         telemetry.addData("TICKS_PER_REV", TICKS_PER_REV);
-        telemetry.addData("Motor mode",    shooterMotor.getMode());
+        telemetry.addData("Motor mode",    Shooter.getMode());
         telemetry.update();
 
         waitForStart();
@@ -181,58 +181,58 @@ public class shooter_set_pos extends LinearOpMode {
             boolean pressedRight = dpadRightNow && !lastDpadRight;
             boolean pressedLeft  = dpadLeftNow  && !lastDpadLeft;
 
-            if (pressedUp) { YPos = Math.min(YPos + Y_STEP, Y_MAX); }
-            if (pressedDown) { YPos = Math.max(YPos - Y_STEP, Y_MIN); }
-            if (pressedRight) { XPos = Math.min(XPos + X_STEP, X_MAX); }
-            if (pressedLeft) { XPos = Math.max(XPos - X_STEP, X_MIN); }
+            if (pressedUp) { FieldY = Math.min(FieldY + Y_STEP, Y_MAX); }
+            if (pressedDown) { FieldY = Math.max(FieldY - Y_STEP, Y_MIN); }
+            if (pressedRight) { FieldX = Math.min(FieldX + X_STEP, X_MAX); }
+            if (pressedLeft) { FieldX = Math.max(FieldX - X_STEP, X_MIN); }
 
-            double targetTicksPerSec = velocity(XPos, YPos);
-            double targetServo = hoodServoCalc(XPos, YPos);
+            double targetTicksPerSec = velocity(FieldX, FieldY);
+            double targetServo = hoodServoCalc(FieldX, FieldY);
             targetServo = Math.max(0.0, Math.min(1.0, targetServo));
 
             if (gamepad1.right_bumper) {
-                goToArea(XPos, YPos); // go to shooter area and face shooter
-                shooterMotor.setVelocity(targetTicksPerSec);
+                goToArea(FieldX, FieldY); // go to shooter area and face shooter
+                Shooter.setVelocity(targetTicksPerSec);
                 hoodServo.setPosition(targetServo);
                 sleep(750);
                 gateServo.setPosition(0.8);
-                transferMotor.setPower(-1);
+                IntakeControl.setPower(-1);
                 sleep(500);
-                transferMotor.setVelocity(0);
+                IntakeControl.setVelocity(0);
                 gateServo.setPosition(1);
                 sleep(100);
             } else {
-                shooterMotor.setVelocity(0);
+                Shooter.setVelocity(0);
                 gateServo.setPosition(1);
             }
 
             if (gamepad1.left_bumper) {
-                intakeMotor.setPower(-1);
-                transferMotor.setPower(1);
+                IntakeMain.setPower(-1);
+                IntakeControl.setPower(1);
             } else {
-                intakeMotor.setPower(0);
-                transferMotor.setPower(0);
+                IntakeMain.setPower(0);
+                IntakeControl.setPower(0);
             }
 
-            double rawVelTicksPerSec  = shooterMotor.getVelocity();
+            double rawVelTicksPerSec  = Shooter.getVelocity();
 
-            double velDegPerSec = shooterMotor.getVelocity(AngleUnit.DEGREES);
+            double velDegPerSec = Shooter.getVelocity(AngleUnit.DEGREES);
             double actualRPM    = (velDegPerSec / 360.0) * 60.0;
 
-            double motorPower   = shooterMotor.getPower();
-            double motorCurrent = shooterMotor.getCurrent(CurrentUnit.AMPS);
-            int    encoderTicks = shooterMotor.getCurrentPosition();
+            double motorPower   = Shooter.getPower();
+            double motorCurrent = Shooter.getCurrent(CurrentUnit.AMPS);
+            int    encoderTicks = Shooter.getCurrentPosition();
 
             telemetry.addLine("Position");
-            telemetry.addData("  X",   "%.3f  (dpad L/R)", XPos);
-            telemetry.addData("  Y",   "%.3f  (dpad up/down)", YPos);
+            telemetry.addData("  X",   "%.3f  (dpad L/R)", FieldX);
+            telemetry.addData("  Y",   "%.3f  (dpad up/down)", FieldY);
 
             telemetry.addLine("=== HOOD SERVO ===");
             telemetry.addData("  Position",   "%.3f  (automatically done)", hoodServo.getPosition());
 
             telemetry.addLine();
             telemetry.addLine("=== SHOOTER MOTOR ===");
-            telemetry.addData("  RunMode",        shooterMotor.getMode());
+            telemetry.addData("  RunMode",        Shooter.getMode());
 
             telemetry.addLine();
             telemetry.addLine("-- Velocity --");
@@ -246,7 +246,7 @@ public class shooter_set_pos extends LinearOpMode {
             lastDpadLeft  = dpadLeftNow;
         }
 
-        shooterMotor.setVelocity(0);
+        Shooter.setVelocity(0);
 
     }
 }
