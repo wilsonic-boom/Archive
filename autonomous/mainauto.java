@@ -253,8 +253,19 @@ public class motor_encodersmotor extends LinearOpMode {
     public void main_code() {
         int timeout = 10;
         int change  = 1;
+        if (start == Start.TOP) {
+            FieldY = 72 - 17.5;
+            FieldRotation = 180;
+        } else {
+            FieldY = -72 + 17.5;
+            FieldRotation = 0;
+        }
+
         if (alliance == Alliance.BLUE) {
             change = -1;
+            FieldX = -24;
+        } else {
+            FieldX = 24;
         }
 
         double row_start = -36.0 + 7.5 + 9; // = -19.5
