@@ -68,11 +68,11 @@ public class shooter_set_pos extends LinearOpMode {
         );
     }
 
-    public static List<Integer> close_shooter_pos(double x, double y) {
-        List<Integer> result = new ArrayList<>();
+    public static List<Double> close_shooter_pos(double x, double y) {
+        List<Double> result = new ArrayList<>();
 
         if (y>x-48 && y<-x && y<x && y<-x-48) {
-            if y < -24 {
+            if (y < -24) {
                 result.add(0);
                 result.add(-48);
             } else {
