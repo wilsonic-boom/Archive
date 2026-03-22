@@ -408,7 +408,7 @@ public class motor_encodersmotor extends LinearOpMode {
         return result;
     }
 
-    public static void goToArea(double x, double y) {
+    public void goToArea(double x, double y) {
         if (!(y<x-48 && y<-x-48) && !(-x<y && x<y)) { // if its not alr in shooting area, go to it and face shooter
             List<Double> values = close_shooter_pos(x, y);
 
@@ -417,26 +417,26 @@ public class motor_encodersmotor extends LinearOpMode {
             double x2 = 0;
             double y2 = 66;
 
-            if (Alliance == Alliance.RED) {
+            if (alliance == Alliance.RED) {
                 x2 = 66;
             } else {
                 x2 = -66;
             }
             double bearing = (90 - Math.toDegrees(Math.atan2(y2 - y1, x2 - x1)) + 360) % 360;
 
-            encoderdrive(x1, y1, bearing, true, 5);
+            encoderDrive(x1, y1, bearing, true, 5);
         } else { // face shooter
             double x2 = 0;
             double y2 = 66;
 
-            if (Alliance == Alliance.RED) {
+            if (alliance == Alliance.RED) {
                 x2 = 66;
             } else {
                 x2 = -66;
             }
             double bearing = (90 - Math.toDegrees(Math.atan2(y2 - y, x2 - x)) + 360) % 360;
 
-            encoderdrive(x, y, bearing, true, 5);
+            encoderDrive(x, y, bearing, true, 5);
         }
     }
 
@@ -452,7 +452,7 @@ public class motor_encodersmotor extends LinearOpMode {
         gateServo.setPosition(0.8);
         IntakeControl.setPower(-1);
         sleep(500);
-        IntakeControl.setVelocity(0);
+        IntakeControl.setPower(0);
         gateServo.setPosition(1);
         sleep(100);
     }
