@@ -35,7 +35,6 @@ public class shooter_set_pos extends LinearOpMode {
     private double YPos = 0.0;
     private double XPos = 0.0;
     private double bearing = 0.0;
-    private boolean motorRunning  = false;
     private boolean intakeRunning  = false;
     static boolean red = true;
 
@@ -71,7 +70,7 @@ public class shooter_set_pos extends LinearOpMode {
     public static List<Double> close_shooter_pos(double x, double y) {
         List<Double> result = new ArrayList<>();
 
-        if (y>x-48 && y<-x && y<x && y<-x-48) {
+        if (y>x-48 && y<-x && y<x && y>-x-48) {
             if (y < -24) {
                 result.add(0);
                 result.add(-48);
@@ -111,7 +110,7 @@ public class shooter_set_pos extends LinearOpMode {
     }
 
     public static void goToArea(double x, double y) {
-        if (!(y<x-48 && y<-x-48) || !(-x<y && x<y)) { // if its not alr in shooting area, go to it and face shooter
+        if (!(y<x-48 && y<-x-48) && !(-x<y && x<y)) { // if its not alr in shooting area, go to it and face shooter
             List<Double> values = close_shooter_pos(x, y);
 
             double x1 = values.get(0);
@@ -189,12 +188,13 @@ public class shooter_set_pos extends LinearOpMode {
 
             double targetTicksPerSec = velocity(XPos, YPos);
             double targetServo = hoodServoCalc(XPos, YPos);
+            targetServo = Math.max(0.0, Math.min(1.0, targetServo));
 
             if (gamepad1.right_bumper) {
-                goToArea(); // go to shooter area and face shooter
+                goToArea(Xpos, YPos); // go to shooter area and face shooter
                 shooterMotor.setVelocity(targetTicksPerSec);
                 hoodServo.setPosition(targetServo);
-                sleep(00);
+                sleep(750);
                 gateServo.setPosition(0.8);
                 transferMotor.setPower(-1);
                 sleep(500);
@@ -232,7 +232,6 @@ public class shooter_set_pos extends LinearOpMode {
 
             telemetry.addLine();
             telemetry.addLine("=== SHOOTER MOTOR ===");
-            telemetry.addData("  State",         motorRunning ? "RUNNING (RB=stop)" : "STOPPED (RB=start)");
             telemetry.addData("  RunMode",        shooterMotor.getMode());
 
             telemetry.addLine();
