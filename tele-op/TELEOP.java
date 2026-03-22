@@ -13,7 +13,6 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 @TeleOp
 public class Teleop extends LinearOpMode {
 
-
     boolean Slow = false;
 
     boolean reverse = false;
