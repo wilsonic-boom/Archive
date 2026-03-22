@@ -22,6 +22,27 @@ public class Teleop extends LinearOpMode {
 
     boolean intake = false;
 
+    public static double velocity(double x, double y) {
+        return (44.297 * Math.pow(Math.abs(y), 1.0 / 3.0)
+                - 16.893 * Math.abs(x)
+                + 0.0018285 * Math.pow(Math.abs(y), 2)
+                + 5.0046e-05 * Math.pow(Math.abs(x), 2) * Math.pow(y, 2)
+                + 1460); // * (TICKS_PER_REV / 60.0); // maybe the  * (TICKS_PER_REV / 60.0) not needed?
+    }
+
+    public static double hoodServoCalc(double x, double y) {
+        return 0.037524 * Math.pow(Math.abs(y), 0.5)
+                - 0.027099 * Math.pow(Math.abs(x), 1.0 / 3.0)
+                - 0.0051773 * Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2))
+                + 0.18998;
+    }
+
+    public static double distance_formula(double x1, double y1, double x2, double y2) {
+        return Math.sqrt(
+                Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)
+        );
+    }
+
     @Override
     public void runOpMode() {
 
@@ -128,8 +149,21 @@ public class Teleop extends LinearOpMode {
             Shooter.setPower(gamepad1.right_trigger);
             telemetry.addData("SHOOTER", Shooter.getVelocity());
 
-
-
+            // AUTO SHOOT
+            if (gamepad1.right_bumper) {
+                double targetTicksPerSec = velocity(FieldX, FieldY);
+                double targetServo = hoodServoCalc(FieldX, FieldY);
+                targetServo = Math.max(0.0, Math.min(1.0, targetServo));
+                Shooter.setVelocity(targetTicksPerSec);
+                hoodServo.setPosition(targetServo);
+                sleep(750);
+                gateServo.setPosition(0.8);
+                IntakeControl.setPower(-1);
+                sleep(500);
+                IntakeControl.setPower(0);
+                gateServo.setPosition(1);
+                sleep(100);
+            }
 
             if (gamepad1.dpad_up) {
                 double change = hood.getPosition() + 0.01;
@@ -194,8 +228,6 @@ public class Teleop extends LinearOpMode {
 
             telemetry.addData("GATE", gate.getPosition());
             telemetry.update();
-
-
         }
     }
 }
