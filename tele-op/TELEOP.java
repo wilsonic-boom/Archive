@@ -210,23 +210,7 @@ public class Teleop extends LinearOpMode {
             }
 
             telemetry.addData("SHOOTER", Shooter.getVelocity());
-
-
-            //AUTO SHOOT
-            if (gamepad1.right_bumper) {
-                double targetTicksPerSec = velocity(FieldX, FieldY);
-                double targetServo = hoodServoCalc(FieldX, FieldY);
-                targetServo = Math.max(0.0, Math.min(1.0, targetServo));
-                Shooter.setVelocity(targetTicksPerSec);
-                hood.setPosition(targetServo);
-                sleep(750);
-                gate.setPosition(0.8);
-                IntakeControl.setPower(-1);
-                sleep(500);
-                IntakeControl.setPower(0);
-                gate.setPosition(1);
-                sleep(100);
-            }
+            
 
             if (gamepad1.dpad_up) {
                 double change = hood.getPosition() + 0.01;
