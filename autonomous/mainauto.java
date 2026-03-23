@@ -44,7 +44,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
-@Autonomous(name="Drive with Motor E", group="Robot")
+@Autonomous(name="MainAuto", group="Robot")
 
 public class automain extends LinearOpMode {
 
@@ -81,7 +81,7 @@ public class automain extends LinearOpMode {
     static final double WHEEL_DIAMETER_INCHES = 4.0;
     static final double COUNTS_PER_INCH       = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
-    static final double DRIVE_SPEED  = 0.6;
+    static final double DRIVE_SPEED  = 0.6; //change?
     static final double TURN_SPEED   = 0.5;
 
 
@@ -162,6 +162,7 @@ public class automain extends LinearOpMode {
     //   turnDegrees  — heading to face (field-centric) or delta turn (relative)
     //   fieldcentric — if true, x/y/turn are absolute field coordinates
     //   timeoutS     — max seconds before giving up
+
     public void encoderDrive(double xInches, double yInches,
                              double turnDegrees, boolean fieldcentric,
                              double timeoutS) {
@@ -189,7 +190,7 @@ public class automain extends LinearOpMode {
         // Update the "Memory" of where the robot is on the field
         FieldX += xInches;
         FieldY += yInches;
-        FieldRotation += adjustedTurn;
+        FieldRotation = imu.getRobotYawPitchRollAngles().getYaw(org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES);
 
         if (!opModeIsActive()) return;
 
@@ -271,7 +272,8 @@ public class automain extends LinearOpMode {
         if (start == Start.BOTTOM) {
 
             // ── Shoot from starting position ──
-            // ADD SHOOTING HERE
+
+            goAndShoot();
             telemetry.addData("BOTTOM","true");
 
             // ── Intake row 1 ──
@@ -283,7 +285,8 @@ public class automain extends LinearOpMode {
             encoderDrive(0, change * (72.0 - row_start - robot_length), 0, false, 5);
             IntakeMain.setPower(0);
             IntakeControl.setPower(0);
-            //shoot
+
+            goAndShoot();
 
             // ── Intake row 2 ──
             gateServo.setPosition(1);
@@ -308,7 +311,7 @@ public class automain extends LinearOpMode {
             // ── Go to shoot pos and shoot ──
             encoderDrive(0, 12, 0, false, timeout);
 
-            //shoot
+            goAndShoot();
 
             // ── Intake row 3 ──
             encoderDrive(change * row_start, 12, 0, true, timeout);
@@ -318,9 +321,8 @@ public class automain extends LinearOpMode {
             encoderDrive(0, change * (72.0 - row_start - robot_length), 0, false, timeout);
             IntakeMain.setPower(0);
             IntakeControl.setPower(0);
-            // ── Go to shoot pos and shoot ──
-            // ADD HERE GO TO POS
-            // ADD HERE SHOOTING
+
+            goAndShoot();
 
         } else { // Start.TOP
             gateServo.setPosition(1);
@@ -332,14 +334,14 @@ public class automain extends LinearOpMode {
             encoderDrive(0,0,180,false,timeout);
 
             // ── Calibrate starting position and shoot ──
-            // ADD FINDING START AND SHOOTING HERE
+
+            goAndShoot();
 
             // ── Intake row 3 ──
             encoderDrive(change * row_start, 12, 270, true, timeout);
             encoderDrive(change * (72.0 - row_start), 0, 0, false, timeout);
 
-            // ── Go to shoot pos and shoot ──
-            // ADD GO TO SHOOTING POS AND SHOOT HERE
+            goAndShoot();
 
             // ── Open classifier ──
             encoderDrive(change * row_start, 0, 270, true, timeout); // CAN CHANGE X IF NOT NEEDED THAT FAR
@@ -350,16 +352,14 @@ public class automain extends LinearOpMode {
             encoderDrive(change * row_start, -12, 270, true, timeout);
             encoderDrive(change * (72.0 - row_start), 0, 0, false, timeout);
 
-            // ── Go to shoot pos and shoot ──
             encoderDrive(change * row_start, -36, 270, true, timeout);
-            // ADD GO TO SHOOT POS AND SHOOT HERE
+            goAndShoot();
 
             // ── Intake row 1 ──
             encoderDrive(change * row_start, -36, 270, true, timeout);
             encoderDrive(change * (72.0 - row_start), 0, 0, false, timeout);
 
-            // ── Go to shoot pos and shoot ──
-            // ADD GO TO SHOOT POS AND SHOOT HERE
+            goAndShoot();
         }
     }
 
@@ -442,7 +442,7 @@ public class automain extends LinearOpMode {
             }
             double bearing = (90 - Math.toDegrees(Math.atan2(y2 - y1, x2 - x1)) + 360) % 360;
 
-            encoderDrive(x1, y1, bearing, true, 5);
+            encoderDrive(x1, y1, bearing, true, 8);
         } else { // face shooter
             double x2 = 0;
             double y2 = 66;
