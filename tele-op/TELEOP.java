@@ -13,6 +13,8 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+import java.util.List;
+import java.util.ArrayList;
 
 @TeleOp
 public class Teleop extends LinearOpMode {
