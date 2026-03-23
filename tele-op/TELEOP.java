@@ -49,6 +49,21 @@
                     + 0.18998;
         }
 
+        public static double calculateVelocity(double range) {
+            return 8.8912e8 * Math.pow(range, -4)
+                    - 1.7069e6 * Math.pow(range, -2)
+                    + 0.0012772 * Math.pow(range, 2) * Math.log(range)
+                    + 1594.1;
+        }
+
+        public static double calculateHoodServo(double range) {
+            return 1.7043e5 * Math.pow(range, -4)
+                    - 26.383 * Math.pow(range, -1)
+                    - 0.0023591 * range
+                    + 0.69062;
+        }
+
+
         public static double distance_formula(double x1, double y1, double x2, double y2) {
             return Math.sqrt(
                     Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)
@@ -270,6 +285,33 @@
 
                 if (gamepad1.share) {
                     requestOpModeStop();
+                }
+
+                if (gamepad1.left_bumper) {
+                    if (!detections.isEmpty()) {
+                        double rangeSeen = -1;
+                        for (AprilTagDetection tag : detections) {
+                            // Only process tags with ID 24
+                            if (tag.id == 24 || tag.id == 20) {
+                                rangeSeen = Math.sqrt(Math.pow(tag.ftcPose.range, 2) + Math.pow(tag.ftcPose.z, 2))
+                            }
+                        }
+
+                        if (!(rangeSeen == -1)) {
+                            double targetTicksPerSec = calculateVelocity(rangeSeen);
+                            double targetServo = calculateHoodServo(rangeSeen);
+                            targetServo = Math.max(0.0, Math.min(1.0, targetServo));
+                            Shooter.setVelocity(targetTicksPerSec);
+                            hood.setPosition(targetServo);
+                            sleep(750);
+                            gate.setPosition(0.8);
+                            IntakeControl.setPower(-1);
+                            sleep(500);
+                            IntakeControl.setPower(0);
+                            gate.setPosition(1);
+                            sleep(100);
+                        }
+                    }
                 }
 
                 telemetry.addData("GATE", gate.getPosition());
