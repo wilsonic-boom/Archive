@@ -44,11 +44,9 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
-import java.lang.reflect.Field;
+@Autonomous(name="Drive with Motor E", group="Robot")
 
-@Autonomous(name="Drive with Motor encoders", group="Robot")
-
-public class motor_encodersmotor extends LinearOpMode {
+public class automain extends LinearOpMode {
 
     enum Alliance { RED, BLUE }
     enum Start { TOP, BOTTOM }
@@ -92,7 +90,7 @@ public class motor_encodersmotor extends LinearOpMode {
 
         // Set alliance and start position here
         start    = Start.BOTTOM;
-        alliance = Alliance.BLUE;
+        alliance = Alliance.RED;
 
 
         FLmotor     = hardwareMap.get(DcMotor.class, "FLmotor");
@@ -246,20 +244,19 @@ public class motor_encodersmotor extends LinearOpMode {
     }
 
 
-    public double[] FindPos() {
-        return new double[]{ FieldX, FieldY, FieldRotation };
-    }
 
     public void main_code() {
-        int timeout = 10;
+        int timeout = 7;
         int change  = 1;
         if (start == Start.TOP) {
-            FieldY = 72 - 17.5;
+            FieldY = 24;
             FieldRotation = 180;
         } else {
             FieldY = -72 + 17.5;
             FieldRotation = 0;
         }
+
+        telemetry.addData("main","true");
 
         if (alliance == Alliance.BLUE) {
             change = -1;
@@ -268,40 +265,45 @@ public class motor_encodersmotor extends LinearOpMode {
             FieldX = 24;
         }
 
-        double row_start = -36.0 + 7.5 + 9; // = -19.5
+        double row_start = 18;
+        double robot_length = 9;
 
         if (start == Start.BOTTOM) {
 
             // ── Shoot from starting position ──
             // ADD SHOOTING HERE
-            telemetry.addData("bottomblue","true");
+            telemetry.addData("BOTTOM","true");
 
             // ── Intake row 1 ──
             gateServo.setPosition(1);
-            encoderDrive(row_start, -36, 270, true, timeout);
+            encoderDrive(change * row_start, 12, 0, true, timeout);
+            encoderDrive(0,0,90,true,timeout);
             IntakeMain.setPower(1);
             IntakeControl.setPower(1);
-            encoderDrive(0, (72.0 - row_start), 0, false, 4);
+            encoderDrive(0, change * (72.0 - row_start - robot_length), 0, false, 5);
             IntakeMain.setPower(0);
             IntakeControl.setPower(0);
             //shoot
 
             // ── Intake row 2 ──
-            encoderDrive(row_start, -12, 270, true, timeout);
+            gateServo.setPosition(1);
+            encoderDrive(change * row_start, 12, 0, true, timeout);
+            encoderDrive(0,0,90,true,timeout);
             IntakeMain.setPower(1);
             IntakeControl.setPower(1);
-            encoderDrive(0, (72.0 - row_start), 0, false, timeout);
+            encoderDrive(0, change * (72.0 - row_start - robot_length), 0, false, timeout);
             IntakeMain.setPower(0);
             IntakeControl.setPower(0);
 
             // ── Open classifier ──
-            encoderDrive(change * row_start, 0, 270, true, timeout); // CAN CHANGE X IF NOT NEEDED THAT FAR
+            encoderDrive(change * row_start, 0, 0, true, timeout); // CAN CHANGE X IF NOT NEEDED THAT FAR
+            encoderDrive(0,0,270,true,timeout);
             IntakeMain.setPower(1);
             IntakeControl.setPower(1);
-            encoderDrive(change * (72.0 - row_start), 0, 0, false, timeout);
+            encoderDrive(0, change * (72.0 - row_start - robot_length), 0, false, 5);
             IntakeMain.setPower(0);
             IntakeControl.setPower(0);
-            encoderDrive(change * -(72.0 - row_start), 0, 0, false, timeout);
+            encoderDrive(0, change * -(72.0 - row_start - robot_length), 0, false, timeout);
 
             // ── Go to shoot pos and shoot ──
             encoderDrive(0, 12, 0, false, timeout);
@@ -309,10 +311,11 @@ public class motor_encodersmotor extends LinearOpMode {
             //shoot
 
             // ── Intake row 3 ──
-            encoderDrive(change * row_start, 12, 270, true, timeout);
+            encoderDrive(change * row_start, 12, 0, true, timeout);
+            encoderDrive(0,0,270,true,timeout);
             IntakeMain.setPower(1);
             IntakeControl.setPower(1);
-            encoderDrive(change * (72.0 - row_start), 0, 0, false, timeout);
+            encoderDrive(0, change * (72.0 - row_start - robot_length), 0, false, timeout);
             IntakeMain.setPower(0);
             IntakeControl.setPower(0);
             // ── Go to shoot pos and shoot ──
@@ -320,9 +323,13 @@ public class motor_encodersmotor extends LinearOpMode {
             // ADD HERE SHOOTING
 
         } else { // Start.TOP
+            gateServo.setPosition(1);
+
+            telemetry.addData("TOP","true");
 
             // ── Face april tag ──
-            encoderDrive(change * -24, -24, 180, false, timeout);
+            encoderDrive(-0, 24, 0, false, timeout);
+            encoderDrive(0,0,180,false,timeout);
 
             // ── Calibrate starting position and shoot ──
             // ADD FINDING START AND SHOOTING HERE
@@ -447,7 +454,7 @@ public class motor_encodersmotor extends LinearOpMode {
             }
             double bearing = (90 - Math.toDegrees(Math.atan2(y2 - y, x2 - x)) + 360) % 360;
 
-            encoderDrive(x, y, bearing, true, 5);
+            encoderDrive(x, y, bearing, true, 8);
         }
     }
 
